@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子烟油配方计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container, #resultContainer, #recipeDetailContainer, .saved-recipes {
+            max-width: 1080px;
+            width: 100%;
+            min-width: 0;
+            margin: 32px auto 0 auto;
+            background-color: #fff;
+            padding: 32px 40px 40px 40px;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        .title, #resultContainer h2, #recipeDetailContainer h2 {
+            text-align: center;
+            font-size: 2em;
+            margin: 0 0 28px 0;
+            letter-spacing: 2px;
+            color: #222;
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+            gap: 10px;
+        }
+        .input-row label {
+            flex: 0 0 150px;
+            text-align: right;
+            color: #333;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .input-row input[type="number"],
+        .input-row input[type="text"] {
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 16px;
+        }
+        .input-row .unit {
+            margin-left: 6px;
+            color: #666;
+            font-size: 16px;
+            background-color: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .flavor-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .flavor-item input[type="text"] {
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 16px;
+        }
+        .flavor-item input[type="number"] {
+            width: 80px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 16px;
+        }
+        .flavor-item .unit {
+            margin-left: 6px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 18px;
+            margin-left: 0;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .flavor-controls {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin: 22px 0 12px 0;
+        }
+        .btn, .btn-generate, .btn-save, .btn-cancel, .edit-button {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 10px;
+            padding: 12px 0;
+            font-size: 17px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .btn-generate, .btn-add {
+            display: block;
+            margin: 28px auto 0 auto;
+        }
+        .drops-input {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 12px 0 0 0;
+            gap: 12px;
+        }
+        .drops-input label {
+            font-size: 16px;
+            margin-right: 0;
+        }
+        .result-table {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            background: #fafbfc;
+            margin-bottom: 18px;
+        }
+        .result-table th, .result-table td {
+            padding: 12px 6px;
+            text-align: center;
+            font-size: 15px;
+        }
+        .result-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .result-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .result-table tr.total-row {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+        .result-table tr.nic-row {
+            color: #d32f2f;
+        }
+        .result-table tr.pg-row {
+            color: #f57c00;
+        }
+        .result-table tr.vg-row {
+            color: #388e3c;
+        }
+        .edit-button {
+            background-color: #2196f3;
+            color: white;
+            border-radius: 8px;
+            float: right;
+            margin-bottom: 12px;
+        }
+        .edit-button:hover {
+            background-color: #1976d2;
+        }
+        .progress-bar {
+            height: 14px;
+            border-radius: 7px;
+            background: linear-gradient(to right, #e74c3c 0%, #e74c3c var(--nic-percent), #f39c12 var(--nic-percent), #f39c12 var(--pg-percent), #2ecc71 var(--pg-percent), #2ecc71 100%);
+            margin: 22px 0 12px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .save-form {
+            margin-top: 22px;
+            text-align: center;
+        }
+        .save-form input[type="text"] {
+            padding: 10px;
+            margin-right: 12px;
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+        .btn.btn-save {
+            background-color: #28a745;
+            color: white;
+            border-radius: 8px;
+            font-size: 1.1em;
+            padding: 12px 0;
+            margin-top: 12px;
+        }
+        #resultContainer p, #recipeDetailContainer p {
+            color: #888;
+            font-size: 1em;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin: 12px 0 0 0;
+        }
+        .saved-recipes {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: none;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0 0 0 0;
+        }
+        .saved-recipes h3 {
+            margin-bottom: 22px;
+            color: #222;
+            font-size: 1.25em;
+            font-weight: bold;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .import-export-buttons {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 2;
+            padding-top: 0;
+        }
+        .import-export-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .import-export-buttons button:hover {
+            background-color: #0056b3;
+        }
+        .recipe-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .recipe-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 18px 22px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            width: 100%;
+        }
+        .recipe-info {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .recipe-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 1.1em;
+        }
+        .recipe-details {
+            font-size: 1em;
+            color: #666;
+        }
+        .recipe-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 14px;
+            align-items: center;
+            margin-left: 18px;
+        }
+        .recipe-actions button {
+            min-width: 80px;
+            padding: 9px 0;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+        .btn-add {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            margin: 28px auto 0 auto;
+            font-size: 19px;
+            padding: 16px 0;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        @media (max-width: 1080px) {
+            .container, #resultContainer, #recipeDetailContainer, .saved-recipes {
+                max-width: 100vw;
+                width: 100vw;
+                padding: 10px 2vw 18px 2vw;
+                border-radius: 0;
+                margin: 0 auto;
+            }
+            .title, #resultContainer h2, #recipeDetailContainer h2 {
+                font-size: 1.3em;
+                margin-bottom: 18px;
+            }
+            .input-row label {
+                flex: 0 0 90px;
+                font-size: 14px;
+            }
+            .btn, .btn-generate, .btn-save, .btn-cancel, .edit-button {
+                width: 100%;
+                margin: 10px 0;
+                font-size: 15px;
+                padding: 10px 0;
+            }
+            .flavor-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .result-table th, .result-table td {
+                padding: 7px 2px;
+                font-size: 13px;
+            }
+            .save-form input[type="text"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .edit-button {
+                width: 100%;
+                float: none;
+            }
+            .saved-recipes {
+                padding: 0 2vw 0 2vw;
+            }
+            .recipe-item {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px 6px;
+            }
+            .recipe-actions {
+                margin-left: 0;
+                margin-top: 10px;
+                justify-content: flex-end;
+            }
+            .btn-add {
+                font-size: 16px;
+                padding: 10px 0;
+            }
+            .import-export-buttons {
+                position: static;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                margin-bottom: 10px;
+            }
+        }
+        .ratio-section {
+            width: 100%;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+        .ratio-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+            gap: 10px;
+        }
+        .ratio-row label {
+            flex: 0 0 150px;
+            text-align: right;
+            color: #333;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .ratio-row input[type="number"] {
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 16px;
+        }
+        .ratio-row .unit {
+            margin-left: 6px;
+            color: #666;
+            font-size: 16px;
+            background-color: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .ratio-section.hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">电子烟油配方计算器</h1>
+        
+        <div class="saved-recipes">
+            <h3>已保存的配方</h3>
+            <div class="import-export-buttons">
+                <button id="importJsonBtn">导入JSON</button>
+                <input type="file" id="importJsonFile" accept=".json,application/json" style="display:none" />
+                <button id="exportJsonBtn">导出JSON</button>
+            </div>
+            <div id="recipeList" class="recipe-list">
+                <!-- 保存的配方将在这里显示 -->
+            </div>
+            <button class="btn btn-add" onclick="showNewRecipeForm()">新建配方</button>
+        </div>
+
+        <div id="recipeForm" style="display: none;">
+            <div class="input-group">
+                <div class="input-row">
+                    <label>目的调制数量</label>
+                    <input type="number" id="totalVolume" value="100" min="0" step="1">
+                    <span class="unit">ml</span>
+                </div>
+                
+                <div class="input-row">
+                    <label></label>
+                    <label style="text-align: left;">
+                        <input type="checkbox" id="fixedRatio" onchange="toggleFixedRatio()"> 固定PG/VG比例
+                    </label>
+                </div>
+
+                <div class="input-row fixed-ratio-input" style="display: none;">
+                    <label>预设PG/VG比例</label>
+                    <input type="text" id="fixedRatioInput" placeholder="例如：1:1、3:7、4:6" onchange="handleFixedRatioChange()">
+                </div>
+                
+                <div class="input-row">
+                    <label>蒸馏水/伏特加/PGA</label>
+                    <input type="number" id="waterPercentage" value="0" min="0" max="100" step="1">
+                    <span class="unit">%</span>
+                </div>
+                
+                <div class="ratio-section">
+                    <div class="ratio-row">
+                        <label>PG比例</label>
+                        <input type="number" id="pgPercentage" value="30" min="0" max="100" step="0.1">
+                        <span class="unit">%</span>
+                    </div>
+                    <div class="ratio-row">
+                        <label>VG比例</label>
+                        <input type="number" id="vgPercentage" value="70" min="0" max="100" step="0.1">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+                <div id="vgWarning" style="color:red;font-size:12px;display:none;margin-top:5px;"></div>
+
+                <div class="input-row">
+                    <label></label>
+                    <label style="text-align: left;">
+                        <input type="checkbox" id="maxVG" onchange="toggleMaxVG()"> 最大VG比例
+                    </label>
+                </div>
+
+                <div class="input-row">
+                    <label>目标尼古丁强度</label>
+                    <input type="number" id="nicotineStrength" value="1" min="0" step="0.1">
+                    <span class="unit">mg</span>
+                </div>
+
+                <div class="input-row">
+                    <label>尼古丁基液含量</label>
+                    <input type="number" id="nicotineBase" value="100" min="0" step="1">
+                    <span class="unit">mg</span>
+                </div>
+            </div>
+
+            <div id="flavorList">
+                <!-- 香精列表模板 -->
+            </div>
+
+            <div class="flavor-controls">
+                <button class="btn" onclick="addFlavor()">增加香精口味</button>
+                <button class="btn" onclick="removeFlavor()">减少香精口味</button>
+            </div>
+
+            <div id="extraVGInfo" style="display: none; margin: 12px 0; padding: 10px; background-color: #e3f2fd; border-radius: 6px;">
+                <p style="margin: 0; color: #1565c0;">需要额外添加 <span id="extraVGAmount">0</span>ml VG 以维持预设比例</p>
+            </div>
+
+            <div class="drops-input">
+                <label>1毫升滴数</label>
+                <input type="number" id="dropsPerMl" value="35" min="1" step="1">
+            </div>
+
+            <div class="ratio-bar-container">
+                <div class="progress-bar"></div>
+            </div>
+
+            <div id="editButtons" style="display: none;">
+                <button class="btn btn-save" onclick="saveEditedRecipe()">保存</button>
+            </div>
+            <div id="newRecipeButtons" style="display: none;">
+                <button class="btn btn-generate" onclick="handleGenerateClick()">生成配方</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultContainer" class="result-container">
+        <button class="edit-button" onclick="showEditForm()">编辑配方</button>
+        <h2>DBD烟油计算器</h2>
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>成分</th>
+                    <th>毫升</th>
+                    <th>滴数</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody">
+                <!-- 结果将通过JavaScript动态生成 -->
+            </tbody>
+        </table>
+        <div id="progressBar" class="progress-bar"></div>
+        <p style="color: #666; font-size: 0.9em;">*由于香精粘度，挤压力度，滴嘴直径等均可能存在不同，所以计算结果中的"滴数"仅为参考。为了保证准确的计量，推荐使用"ml"作为取液标准</p>
+
+        <div class="save-form">
+            <input type="text" id="recipeName" placeholder="输入配方名称">
+            <button class="btn btn-save" onclick="saveRecipe()">保存配方</button>
+        </div>
+    </div>
+
+    <div id="recipeDetailContainer" class="result-container" style="display:none;">
+        <h2 id="detailRecipeName"></h2>
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th>成分</th>
+                    <th>毫升</th>
+                    <th>滴数</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody id="detailResultTableBody">
+                <!-- 详情内容由JS生成 -->
+            </tbody>
+        </table>
+        <div id="detailProgressBar" class="progress-bar"></div>
+        <button class="btn btn-cancel" onclick="backToRecipeList()">返回</button>
+    </div>
+
+    <script>
+        let flavorCount = 1;
+        const MAX_FLAVORS = 10; // 将最大香精数量改为10个
+        let userBasePG = 30;
+        let userBaseVG = 70;
+        let isSyncing = false;
+        let currentEditingRecipe = null;
+        let currentEditingIndex = -1;
+
+        function addFlavor() {
+            if (flavorCount >= MAX_FLAVORS) {
+                alert(`最多只能添加${MAX_FLAVORS}种香精`);
+                return;
+            }
+            flavorCount++;
+            
+            const flavorList = document.getElementById('flavorList');
+            const flavorItem = document.createElement('div');
+            flavorItem.className = 'flavor-item';
+            flavorItem.innerHTML = `
+                <input type="text" placeholder="香精名称${flavorCount}" class="flavor-name">
+                <input type="number" min="0" max="100" step="0.1" value="0" class="flavor-percentage" onchange="handleFlavorChange()">
+                <span class="unit">%</span>
+                <div class="radio-group">
+                    <label><input type="radio" name="base${flavorCount}" value="PG" checked onchange="handleFlavorChange()"> PG</label>
+                    <label><input type="radio" name="base${flavorCount}" value="VG" onchange="handleFlavorChange()"> VG</label>
+                </div>
+            `;
+            flavorList.appendChild(flavorItem);
+
+            // 更新按钮状态
+            updateFlavorButtons();
+            // 检查并更新PG/VG状态
+            checkFlavorAndUpdatePGVG();
+        }
+
+        function removeFlavor() {
+            if (flavorCount <= 1) {
+                alert('至少需要保留一种香精');
+                return;
+            }
+            const flavorList = document.getElementById('flavorList');
+            flavorList.removeChild(flavorList.lastChild);
+            flavorCount--;
+
+            // 更新按钮状态
+            updateFlavorButtons();
+            // 检查并更新PG/VG状态
+            checkFlavorAndUpdatePGVG();
+        }
+
+        function updateFlavorButtons() {
+            const addBtn = document.querySelector('.btn[onclick="addFlavor()"]');
+            const removeBtn = document.querySelector('.btn[onclick="removeFlavor()"]');
+            
+            // 更新添加按钮状态
+            if (flavorCount >= MAX_FLAVORS) {
+                addBtn.style.opacity = '0.5';
+                addBtn.style.cursor = 'not-allowed';
+            } else {
+                addBtn.style.opacity = '1';
+                addBtn.style.cursor = 'pointer';
+            }
+            
+            // 更新删除按钮状态
+            if (flavorCount <= 1) {
+                removeBtn.style.opacity = '0.5';
+                removeBtn.style.cursor = 'not-allowed';
+            } else {
+                removeBtn.style.opacity = '1';
+                removeBtn.style.cursor = 'pointer';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFlavorButtons();
+
+            // 检查本地是否有配方
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            if (recipes.length === 0) {
+                // 没有配方，直接显示新建配方页面
+                showNewRecipeForm();
+            } else {
+                // 有配方，显示配方列表
+                updateRecipeList();
+                document.getElementById('recipeForm').style.display = 'none';
+                document.querySelector('.saved-recipes').style.display = 'block';
+                // 隐藏结果区域
+                document.getElementById('resultContainer').style.display = 'none';
+            }
+
+            // 其它初始化操作...
+            // 比如初始化PG/VG输入监听等
+            document.getElementById('pgPercentage').addEventListener('input', function() {
+                if (isSyncing) return;
+                isSyncing = true;
+                let pg = parseFloat(this.value) || 0;
+                if (pg > 100) pg = 100;
+                if (pg < 0) pg = 0;
+                this.value = pg;
+                let vg = 100 - pg;
+                document.getElementById('vgPercentage').value = vg.toFixed(1);
+                userBasePG = pg;
+                userBaseVG = vg;
+                checkPGVGRatio();
+                isSyncing = false;
+            });
+            document.getElementById('vgPercentage').addEventListener('input', function() {
+                if (isSyncing) return;
+                isSyncing = true;
+                let vg = parseFloat(this.value) || 0;
+                if (vg > 100) vg = 100;
+                if (vg < 0) vg = 0;
+                this.value = vg;
+                let pg = 100 - vg;
+                document.getElementById('pgPercentage').value = pg.toFixed(1);
+                userBasePG = pg;
+                userBaseVG = vg;
+                checkPGVGRatio();
+                isSyncing = false;
+            });
+
+            // 初始化比例条
+            updateRatioBar();
+            // 初始化第一个香精输入框
+            addFlavor();
+            // 初始化PG/VG输入框状态
+            checkFlavorAndUpdatePGVG();
+            // 初始检查
+            checkPGVGRatio();
+
+            // 最大VG监听
+            const maxVGCheckbox = document.getElementById('maxVG');
+            maxVGCheckbox.addEventListener('change', toggleMaxVG);
+            if (maxVGCheckbox.checked) {
+                toggleMaxVG();
+            }
+
+            // 绑定导出JSON按钮
+            document.getElementById('exportJsonBtn').onclick = exportRecipesToJSON;
+            // 绑定导入JSON按钮
+            document.getElementById('importJsonBtn').onclick = function() {
+                document.getElementById('importJsonFile').click();
+            };
+            document.getElementById('importJsonFile').onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const imported = JSON.parse(evt.target.result);
+                        if (!Array.isArray(imported)) throw new Error('格式错误');
+                        localStorage.setItem('recipes', JSON.stringify(imported));
+                        alert('导入成功！');
+                        location.reload();
+                    } catch (err) {
+                        alert('导入失败，文件格式不正确！');
+                    }
+                };
+                reader.readAsText(file, 'utf-8');
+            };
+        });
+
+        function handleGenerateClick() {
+            const button = document.querySelector('.btn-generate');
+            button.classList.add('loading');
+            button.textContent = '正在计算...';
+
+            setTimeout(() => {
+                calculateAndUpdate();
+                // 隐藏配方表单，显示结果
+                document.getElementById('recipeForm').style.display = 'none';
+                document.querySelector('.saved-recipes').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'block';
+            }, 500);
+        }
+
+        function calculateAndUpdate() {
+            // 获取基本输入值
+            let totalVolume = parseFloat(document.getElementById('totalVolume').value) || 0;
+            const waterPercentage = parseFloat(document.getElementById('waterPercentage').value) || 0;
+            const targetPGPercentage = parseFloat(document.getElementById('pgPercentage').value) || 0;
+            const targetVGPercentage = parseFloat(document.getElementById('vgPercentage').value) || 0;
+            const maxVG = document.getElementById('maxVG').checked;
+            const dropsPerMl = parseFloat(document.getElementById('dropsPerMl').value) || 35;
+            // 额外VG体积
+            let extraVGVolume = 0;
+            if (document.getElementById('extraVGInfo').style.display === 'block') {
+                extraVGVolume = parseFloat(document.getElementById('extraVGAmount').textContent) || 0;
+            }
+            // 获取香精信息
+            const flavorItems = document.querySelectorAll('.flavor-item');
+            let flavors = [];
+            let totalFlavorPG = 0;
+            let totalFlavorVG = 0;
+            flavorItems.forEach((item, index) => {
+                const name = item.querySelector('input[type="text"]').value || `香精${index + 1}`;
+                const percentage = parseFloat(item.querySelector('input[type="number"]').value) || 0;
+                const base = item.querySelector('input[type="radio"]:checked').value;
+                const volume = (totalVolume * percentage) / 100;
+                if (base === 'PG') {
+                    totalFlavorPG += volume;
+                } else if (base === 'VG') {
+                    totalFlavorVG += volume;
+                }
+                flavors.push({ name, percentage, base, volume });
+            });
+            // 计算水/酒精体积
+            const waterVolume = (totalVolume * waterPercentage) / 100;
+            // 计算需要补充的PG和VG
+            let pgVolume = 0;
+            let vgVolume = 0;
+            if (maxVG) {
+                const usedPGVolume = totalFlavorPG + waterVolume;
+                vgVolume = totalVolume - usedPGVolume;
+                pgVolume = usedPGVolume;
+            } else {
+                const totalPGNeeded = totalVolume * (targetPGPercentage / 100);
+                const totalVGNeeded = totalVolume * (targetVGPercentage / 100);
+                pgVolume = totalPGNeeded - totalFlavorPG;
+                vgVolume = totalVGNeeded - totalFlavorVG;
+            }
+            // 修正VG溶剂不包含额外VG
+            if (extraVGVolume > 0) {
+                vgVolume = vgVolume - extraVGVolume;
+                if (vgVolume < 0) vgVolume = 0;
+            }
+            // 生成结果表格
+            const resultTableBody = document.getElementById('resultTableBody');
+            resultTableBody.innerHTML = '';
+            // 计算尼古丁体积
+            const nicotineStrength = parseFloat(document.getElementById('nicotineStrength').value) || 0;
+            const nicotineBase = parseFloat(document.getElementById('nicotineBase').value) || 1;
+            const nicVolume = (totalVolume * nicotineStrength) / nicotineBase;
+            if (nicVolume > 0) {
+                const nicRow = document.createElement('tr');
+                nicRow.className = 'nic-row';
+                nicRow.innerHTML = `
+                    <td>尼古丁基液</td>
+                    <td>${nicVolume.toFixed(2)}</td>
+                    <td>${Math.round(nicVolume * dropsPerMl)}</td>
+                    <td>${((nicVolume / totalVolume) * 100).toFixed(1)}</td>
+                `;
+                resultTableBody.appendChild(nicRow);
+            }
+            // 添加PG行
+            if (pgVolume > 0) {
+                const pgRow = document.createElement('tr');
+                pgRow.className = 'pg-row';
+                pgRow.innerHTML = `
+                    <td>PG 溶剂</td>
+                    <td>${pgVolume.toFixed(2)}</td>
+                    <td>${Math.round(pgVolume * dropsPerMl)}</td>
+                    <td>${((pgVolume / totalVolume) * 100).toFixed(1)}</td>
+                `;
+                resultTableBody.appendChild(pgRow);
+            }
+
+            // 添加VG行
+            if (vgVolume > 0) {
+                const vgRow = document.createElement('tr');
+                vgRow.className = 'vg-row';
+                vgRow.innerHTML = `
+                    <td>VG 溶剂</td>
+                    <td>${vgVolume.toFixed(2)}</td>
+                    <td>${Math.round(vgVolume * dropsPerMl)}</td>
+                    <td>${((vgVolume / totalVolume) * 100).toFixed(1)}</td>
+                `;
+                resultTableBody.appendChild(vgRow);
+            }
+
+            // 添加额外VG行
+            if (extraVGVolume > 0) {
+                const extraVGRow = document.createElement('tr');
+                extraVGRow.style.color = '#1976d2';
+                extraVGRow.innerHTML = `
+                    <td>额外添加VG</td>
+                    <td>${extraVGVolume.toFixed(2)}</td>
+                    <td>${Math.round(extraVGVolume * dropsPerMl)}</td>
+                    <td>-</td>
+                `;
+                resultTableBody.appendChild(extraVGRow);
+            }
+
+            // 添加水/酒精行
+            if (waterVolume > 0) {
+                const waterRow = document.createElement('tr');
+                waterRow.innerHTML = `
+                    <td>蒸馏水/伏特加/PGA</td>
+                    <td>${waterVolume.toFixed(2)}</td>
+                    <td>${Math.round(waterVolume * dropsPerMl)}</td>
+                    <td>${waterPercentage.toFixed(1)}</td>
+                `;
+                resultTableBody.appendChild(waterRow);
+            }
+
+            // 添加香精行
+            flavors.forEach(flavor => {
+                if (flavor.volume > 0) {
+                    const flavorRow = document.createElement('tr');
+                    flavorRow.innerHTML = `
+                        <td>${flavor.name} (${flavor.base})</td>
+                        <td>${flavor.volume.toFixed(2)}</td>
+                        <td>${Math.round(flavor.volume * dropsPerMl)}</td>
+                        <td>${flavor.percentage.toFixed(1)}</td>
+                    `;
+                    resultTableBody.appendChild(flavorRow);
+                }
+            });
+
+            // 添加总量行
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `
+                <td>总量</td>
+                <td>${totalVolume.toFixed(2)}</td>
+                <td>${Math.round(totalVolume * dropsPerMl)}</td>
+                <td>100</td>
+            `;
+            resultTableBody.appendChild(totalRow);
+
+            // 更新进度条
+            const progressBar = document.getElementById('progressBar');
+            const pgPercent = (pgVolume / totalVolume) * 100;
+            progressBar.style.setProperty('--nic-percent', '0%');
+            progressBar.style.setProperty('--pg-percent', `${pgPercent}%`);
+
+            // 移除加载状态
+            const button = document.querySelector('.btn-generate');
+            button.classList.remove('loading');
+            button.textContent = '生成配方';
+
+            // 平滑滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showEditForm() {
+            document.getElementById('recipeForm').style.display = 'block';
+            document.querySelector('.saved-recipes').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+
+        function showResultContainer() {
+            document.getElementById('recipeForm').style.display = 'none';
+            document.querySelector('.saved-recipes').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+            updateRecipeList(); // 更新配方列表
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // 滚动到顶部
+        }
+
+        function saveRecipe() {
+            const name = document.querySelector('#resultContainer input[type="text"]').value.trim();
+            if (!name) {
+                alert('请输入配方名称');
+                return;
+            }
+            // 获取基础液体积
+            let baseVolume = parseFloat(document.getElementById('totalVolume').getAttribute('data-base')) || parseFloat(document.getElementById('totalVolume').value) || 0;
+            // 获取当前配方数据
+            const recipe = {
+                name,
+                date: new Date().toISOString(),
+                params: {
+                    baseVolume: baseVolume,
+                    totalVolume: parseFloat(document.getElementById('totalVolume').value) || 0,
+                    waterPercentage: parseFloat(document.getElementById('waterPercentage').value) || 0,
+                    pgPercentage: parseFloat(document.getElementById('pgPercentage').value) || 0,
+                    vgPercentage: parseFloat(document.getElementById('vgPercentage').value) || 0,
+                    maxVG: document.getElementById('maxVG').checked,
+                    dropsPerMl: parseFloat(document.getElementById('dropsPerMl').value) || 35,
+                    fixedRatio: document.getElementById('fixedRatio') ? document.getElementById('fixedRatio').checked : false,
+                    fixedRatioInput: document.getElementById('fixedRatioInput') ? document.getElementById('fixedRatioInput').value : ''
+                },
+                flavors: Array.from(document.querySelectorAll('.flavor-item')).map(item => ({
+                    name: item.querySelector('input[type="text"]').value,
+                    percentage: parseFloat(item.querySelector('input[type="number"]').value) || 0,
+                    base: item.querySelector('input[type="radio"]:checked').value
+                }))
+            };
+
+            // 获取已保存的配方
+            let recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            recipes.push(recipe);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+
+            // 更新配方列表
+            updateRecipeList();
+
+            // 显示保存成功提示
+            alert('配方保存成功！');
+
+            // 返回到起始页
+            location.reload();
+        }
+
+        // 更新配方列表显示
+        function updateRecipeList() {
+            const recipeList = document.getElementById('recipeList');
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+
+            recipeList.innerHTML = recipes.map((recipe, index) => `
+                <div class="recipe-item">
+                    <div class="recipe-info">
+                        <div class="recipe-name" style="cursor:pointer;color:#007bff;text-decoration:underline;" onclick="showRecipeDetail(${index})">${recipe.name}</div>
+                        <div class="recipe-details">
+                            ${recipe.params.totalVolume}ml, 
+                            PG/VG: ${recipe.params.pgPercentage}/${recipe.params.vgPercentage}
+                        </div>
+                    </div>
+                    <div class="recipe-actions">
+                        <button class="btn btn-edit" onclick="loadRecipe(${index})">编辑</button>
+                        <button class="btn btn-delete" onclick="deleteRecipe(${index})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadRecipe(index) {
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            const recipe = recipes[index];
+            if (!recipe) return;
+            // 保存当前正在编辑的配方信息
+            currentEditingRecipe = recipe;
+            currentEditingIndex = index;
+            // 设置基本参数
+            Object.entries(recipe.params).forEach(([key, value]) => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = value;
+                    } else {
+                        element.value = value;
+                    }
+                }
+            });
+            // 设置fixedRatio勾选和输入框
+            if (recipe.params.fixedRatio) {
+                document.getElementById('fixedRatio').checked = true;
+                document.querySelector('.fixed-ratio-input').style.display = 'flex';
+                document.getElementById('fixedRatioInput').value = recipe.params.fixedRatioInput || '';
+            } else {
+                document.getElementById('fixedRatio').checked = false;
+                document.querySelector('.fixed-ratio-input').style.display = 'none';
+            }
+            // 重置香精列表
+            const flavorList = document.getElementById('flavorList');
+            flavorList.innerHTML = '';
+            flavorCount = 0;
+
+            // 添加香精
+            recipe.flavors.forEach(flavor => {
+                flavorCount++;
+                const flavorItem = document.createElement('div');
+                flavorItem.className = 'flavor-item';
+                flavorItem.innerHTML = `
+                    <input type="text" placeholder="香精名称${flavorCount}" class="flavor-name" value="${flavor.name || ''}">
+                    <input type="number" min="0" max="100" step="0.1" value="${flavor.percentage || 0}" class="flavor-percentage" onchange="handleFlavorChange()">
+                    <span class="unit">%</span>
+                    <div class="radio-group">
+                        <label><input type="radio" name="base${flavorCount}" value="PG" ${flavor.base === 'PG' ? 'checked' : ''} onchange="handleFlavorChange()"> PG</label>
+                        <label><input type="radio" name="base${flavorCount}" value="VG" ${flavor.base === 'VG' ? 'checked' : ''} onchange="handleFlavorChange()"> VG</label>
+                    </div>
+                `;
+                flavorList.appendChild(flavorItem);
+            });
+
+            // 更新按钮状态
+            updateFlavorButtons();
+
+            // 显示编辑表单和编辑按钮
+            document.getElementById('recipeForm').style.display = 'block';
+            document.querySelector('.saved-recipes').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('editButtons').style.display = 'block';
+            document.getElementById('newRecipeButtons').style.display = 'none';
+
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // 更新比例条
+            updateRatioBar();
+            checkFlavorAndUpdatePGVG();
+        }
+
+        // 删除配方
+        function deleteRecipe(index) {
+            if (!confirm('确定要删除这个配方吗？')) return;
+
+            let recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            recipes.splice(index, 1);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            updateRecipeList();
+        }
+
+        // 修改showNewRecipeForm函数
+        function showNewRecipeForm() {
+            document.getElementById('recipeForm').style.display = 'block';
+            document.querySelector('.saved-recipes').style.display = 'none';
+            // 显示生成配方按钮，隐藏保存按钮
+            document.getElementById('editButtons').style.display = 'none';
+            document.getElementById('newRecipeButtons').style.display = 'block';
+            // 隐藏结果区域
+            document.getElementById('resultContainer').style.display = 'none';
+            // 清空表单数据
+            document.getElementById('totalVolume').value = '100';
+            document.getElementById('waterPercentage').value = '0';
+            document.getElementById('pgPercentage').value = '30';
+            document.getElementById('vgPercentage').value = '70';
+            document.getElementById('maxVG').checked = false;
+            // 重置香精列表
+            const flavorList = document.getElementById('flavorList');
+            flavorList.innerHTML = '';
+            flavorCount = 0;
+            addFlavor(); // 添加一个默认的香精输入框
+        }
+
+        // 修改saveEditedRecipe函数
+        function saveEditedRecipe() {
+            // 获取当前配方数据
+            const recipe = {
+                name: currentEditingRecipe.name, // 保持原来的名称
+                date: new Date().toISOString(),
+                params: {
+                    baseVolume: parseFloat(document.getElementById('totalVolume').getAttribute('data-base')) || parseFloat(document.getElementById('totalVolume').value) || 0,
+                    totalVolume: parseFloat(document.getElementById('totalVolume').value) || 0,
+                    waterPercentage: parseFloat(document.getElementById('waterPercentage').value) || 0,
+                    pgPercentage: parseFloat(document.getElementById('pgPercentage').value) || 0,
+                    vgPercentage: parseFloat(document.getElementById('vgPercentage').value) || 0,
+                    maxVG: document.getElementById('maxVG').checked,
+                    dropsPerMl: parseFloat(document.getElementById('dropsPerMl').value) || 35,
+                    fixedRatio: document.getElementById('fixedRatio') ? document.getElementById('fixedRatio').checked : false,
+                    fixedRatioInput: document.getElementById('fixedRatioInput') ? document.getElementById('fixedRatioInput').value : ''
+                },
+                flavors: Array.from(document.querySelectorAll('.flavor-item')).map(item => ({
+                    name: item.querySelector('input[type="text"]').value,
+                    percentage: parseFloat(item.querySelector('input[type="number"]').value) || 0,
+                    base: item.querySelector('input[type="radio"]:checked').value
+                }))
+            };
+
+            // 获取所有配方并更新当前编辑的配方
+            let recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            recipes[currentEditingIndex] = recipe;
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+
+            // 显示保存成功提示
+            alert('配方保存成功！');
+
+            // 返回到起始页
+            location.reload();
+        }
+
+        function updateRatioBar() {
+            const pgPercent = parseFloat(document.getElementById('pgPercentage').value) || 0;
+            const vgPercent = parseFloat(document.getElementById('vgPercentage').value) || 0;
+            const totalVolume = parseFloat(document.getElementById('totalVolume').value) || 0;
+            const nicStrength = parseFloat(document.getElementById('nicotineStrength').value) || 0;
+            const nicBase = parseFloat(document.getElementById('nicotineBase').value) || 1;
+
+            // 计算尼古丁所占的体积百分比
+            const nicVolume = (totalVolume * nicStrength) / nicBase;
+            const nicPercent = (nicVolume / totalVolume) * 100;
+
+            // 设置CSS变量
+            document.documentElement.style.setProperty('--nic-percent', `${nicPercent}%`);
+            document.documentElement.style.setProperty('--pg-percent', `${pgPercent}%`);
+        }
+
+        function checkFlavorAndUpdatePGVG() {
+            let totalFlavorPG = 0;
+            let totalFlavorVG = 0;
+            let totalFlavorPercentage = 0;
+
+            document.querySelectorAll('.flavor-item').forEach(item => {
+                const percentage = parseFloat(item.querySelector('.flavor-percentage').value) || 0;
+                const base = item.querySelector('input[type="radio"]:checked').value;
+                if (base === 'PG') {
+                    totalFlavorPG += percentage;
+                } else {
+                    totalFlavorVG += percentage;
+                }
+                totalFlavorPercentage += percentage;
+            });
+
+            const pgInput = document.getElementById('pgPercentage');
+            const vgInput = document.getElementById('vgPercentage');
+            const maxVGChecked = document.getElementById('maxVG').checked;
+            const fixedRatioChecked = document.getElementById('fixedRatio').checked;
+
+            if (totalFlavorPercentage > 0) {
+                if (fixedRatioChecked) {
+                    // 基础液体积
+                    const baseVolume = parseFloat(document.getElementById('totalVolume').getAttribute('data-base')) || parseFloat(document.getElementById('totalVolume').value) || 0;
+                    // 香精体积
+                    const flavorVolume = baseVolume * totalFlavorPercentage / 100;
+                    // 预设PG/VG比例
+                    const targetPG = userBasePG;
+                    const targetVG = userBaseVG;
+                    // 香精PG体积
+                    const flavorPGVolume = baseVolume * totalFlavorPG / 100;
+                    // 需要补VG体积
+                    let extraVGVolume = 0;
+                    if (targetPG > 0) {
+                        extraVGVolume = flavorPGVolume * (targetVG / targetPG);
+                    }
+                    // 总调制数量 = 基础液体积 + 香精体积 + 补VG体积
+                    const totalVolume = baseVolume + flavorVolume + extraVGVolume;
+                    // 更新输入框显示
+                    document.getElementById('totalVolume').value = totalVolume.toFixed(2);
+                    document.getElementById('totalVolume').setAttribute('data-base', baseVolume);
+                    // 显示额外VG
+                    if (extraVGVolume > 0) {
+                        document.getElementById('extraVGInfo').style.display = 'block';
+                        document.getElementById('extraVGAmount').textContent = extraVGVolume.toFixed(2);
+                    } else {
+                        document.getElementById('extraVGInfo').style.display = 'none';
+                    }
+                    // PG/VG输入框只读
+                    pgInput.disabled = true;
+                    vgInput.disabled = true;
+                } else {
+                    pgInput.disabled = true;
+                    vgInput.disabled = true;
+                    let basePG = userBasePG;
+                    let newPG = basePG + totalFlavorPG;
+                    let newVG = 100 - newPG;
+                    if (newPG < 0) newPG = 0;
+                    if (newVG < 0) newVG = 0;
+                    pgInput.value = newPG.toFixed(1);
+                    vgInput.value = newVG.toFixed(1);
+                    document.getElementById('extraVGInfo').style.display = 'none';
+                }
+            } else {
+                if (!maxVGChecked) {
+                    pgInput.disabled = false;
+                    vgInput.disabled = false;
+                }
+                pgInput.value = userBasePG;
+                vgInput.value = userBaseVG;
+                document.getElementById('extraVGInfo').style.display = 'none';
+            }
+            updateRatioBar();
+            checkPGVGRatio();
+        }
+
+        function handleFlavorChange() {
+            checkFlavorAndUpdatePGVG();
+        }
+
+        function toggleMaxVG() {
+            const maxVGChecked = document.getElementById('maxVG').checked;
+            const ratioSection = document.querySelector('.ratio-section');
+            
+            if (maxVGChecked) {
+                // 隐藏比例输入区域
+                ratioSection.classList.add('hidden');
+            } else {
+                // 显示比例输入区域
+                ratioSection.classList.remove('hidden');
+            }
+            // 更新比例条
+            updateRatioBar();
+            checkPGVGRatio();
+        }
+
+        // 在计算PG/VG比例的函数中添加验证逻辑
+        function checkPGVGRatio() {
+            const pgPercentage = parseFloat(document.getElementById('pgPercentage').value) || 0;
+            const vgPercentage = parseFloat(document.getElementById('vgPercentage').value) || 0;
+            const total = pgPercentage + vgPercentage;
+            const warningElement = document.getElementById('vgWarning');
+
+            if (total > 100) {
+                warningElement.textContent = '超出正常比例，请更正！';
+                warningElement.style.display = 'block';
+            } else {
+                warningElement.style.display = 'none';
+            }
+        }
+
+        function showRecipeDetail(index) {
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            const recipe = recipes[index];
+            if (!recipe) return;
+            document.getElementById('detailRecipeName').textContent = recipe.name;
+            // 优先用totalVolume
+            const totalVolume = recipe.params.totalVolume || 0;
+            const waterPercentage = recipe.params.waterPercentage || 0;
+            const targetPGPercentage = recipe.params.pgPercentage || 0;
+            const targetVGPercentage = recipe.params.vgPercentage || 0;
+            const maxVG = recipe.params.maxVG;
+            const dropsPerMl = recipe.params.dropsPerMl || 35;
+            let flavors = recipe.flavors || [];
+            let totalFlavorPG = 0;
+            let totalFlavorVG = 0;
+            let totalFlavorPercentage = 0;
+            flavors.forEach(flavor => {
+                const percentage = flavor.percentage || 0;
+                const base = flavor.base;
+                if (base === 'PG') {
+                    totalFlavorPG += percentage;
+                } else if (base === 'VG') {
+                    totalFlavorVG += percentage;
+                }
+                totalFlavorPercentage += percentage;
+            });
+            // 香精体积
+            const flavorVolume = totalVolume * totalFlavorPercentage / 100;
+            // 额外VG体积
+            let extraVGVolume = 0;
+            if (targetPGPercentage > 0) {
+                const flavorPGVolume = totalVolume * totalFlavorPG / 100;
+                extraVGVolume = flavorPGVolume * (targetVGPercentage / targetPGPercentage);
+            }
+            // 总量 = 总体积 + 额外VG
+            const finalTotalVolume = totalVolume + extraVGVolume;
+            // 计算水/酒精体积
+            const waterVolume = (finalTotalVolume * waterPercentage) / 100;
+            // 计算需要补充的PG和VG
+            let pgVolume = 0;
+            let vgVolume = 0;
+            if (maxVG) {
+                const usedPGVolume = totalFlavorPG * finalTotalVolume / 100 + waterVolume;
+                vgVolume = finalTotalVolume - usedPGVolume;
+                pgVolume = usedPGVolume;
+            } else {
+                const totalPGNeeded = finalTotalVolume * (targetPGPercentage / 100);
+                const totalVGNeeded = finalTotalVolume * (targetVGPercentage / 100);
+                pgVolume = totalPGNeeded - (totalFlavorPG * finalTotalVolume / 100);
+                vgVolume = totalVGNeeded - (totalFlavorVG * finalTotalVolume / 100);
+            }
+            // 修正VG溶剂不包含额外VG
+            if (extraVGVolume > 0) {
+                vgVolume = vgVolume - extraVGVolume;
+                if (vgVolume < 0) vgVolume = 0;
+            }
+            // 生成详情表格
+            const detailTableBody = document.getElementById('detailResultTableBody');
+            detailTableBody.innerHTML = '';
+            // 计算尼古丁体积
+            const nicotineStrength = recipe.params.nicotineStrength || 0;
+            const nicotineBase = recipe.params.nicotineBase || 1;
+            const nicVolume = (finalTotalVolume * nicotineStrength) / nicotineBase;
+            if (nicVolume > 0) {
+                const nicRow = document.createElement('tr');
+                nicRow.className = 'nic-row';
+                nicRow.innerHTML = `
+                    <td>尼古丁基液</td>
+                    <td>${nicVolume.toFixed(2)}</td>
+                    <td>${Math.round(nicVolume * dropsPerMl)}</td>
+                    <td>${((nicVolume / finalTotalVolume) * 100).toFixed(1)}</td>
+                `;
+                detailTableBody.appendChild(nicRow);
+            }
+            // 添加PG行
+            if (pgVolume > 0) {
+                const pgRow = document.createElement('tr');
+                pgRow.className = 'pg-row';
+                pgRow.innerHTML = `
+                    <td>PG 溶剂</td>
+                    <td>${pgVolume.toFixed(2)}</td>
+                    <td>${Math.round(pgVolume * dropsPerMl)}</td>
+                    <td>${((pgVolume / finalTotalVolume) * 100).toFixed(1)}</td>
+                `;
+                detailTableBody.appendChild(pgRow);
+            }
+            // 添加VG行
+            if (vgVolume > 0) {
+                const vgRow = document.createElement('tr');
+                vgRow.className = 'vg-row';
+                vgRow.innerHTML = `
+                    <td>VG 溶剂</td>
+                    <td>${vgVolume.toFixed(2)}</td>
+                    <td>${Math.round(vgVolume * dropsPerMl)}</td>
+                    <td>${((vgVolume / finalTotalVolume) * 100).toFixed(1)}</td>
+                `;
+                detailTableBody.appendChild(vgRow);
+            }
+            // 添加额外VG行
+            if (extraVGVolume > 0) {
+                const extraVGRow = document.createElement('tr');
+                extraVGRow.style.color = '#1976d2';
+                extraVGRow.innerHTML = `
+                    <td>额外添加VG</td>
+                    <td>${extraVGVolume.toFixed(2)}</td>
+                    <td>${Math.round(extraVGVolume * dropsPerMl)}</td>
+                    <td>-</td>
+                `;
+                detailTableBody.appendChild(extraVGRow);
+            }
+            // 添加水/酒精行
+            if (waterVolume > 0) {
+                const waterRow = document.createElement('tr');
+                waterRow.innerHTML = `
+                    <td>蒸馏水/伏特加/PGA</td>
+                    <td>${waterVolume.toFixed(2)}</td>
+                    <td>${Math.round(waterVolume * dropsPerMl)}</td>
+                    <td>${waterPercentage.toFixed(1)}</td>
+                `;
+                detailTableBody.appendChild(waterRow);
+            }
+            // 添加香精行
+            flavors.forEach(flavor => {
+                const volume = (finalTotalVolume * (flavor.percentage || 0)) / 100;
+                if (volume > 0) {
+                    const flavorRow = document.createElement('tr');
+                    flavorRow.innerHTML = `
+                        <td>${flavor.name} (${flavor.base})</td>
+                        <td>${volume.toFixed(2)}</td>
+                        <td>${Math.round(volume * dropsPerMl)}</td>
+                        <td>${flavor.percentage.toFixed(1)}</td>
+                    `;
+                    detailTableBody.appendChild(flavorRow);
+                }
+            });
+            // 添加总量行
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `
+                <td>总量</td>
+                <td>${finalTotalVolume.toFixed(2)}</td>
+                <td>${Math.round(finalTotalVolume * dropsPerMl)}</td>
+                <td>100</td>
+            `;
+            detailTableBody.appendChild(totalRow);
+            // 更新进度条
+            const progressBar = document.getElementById('detailProgressBar');
+            const pgPercent = (pgVolume / finalTotalVolume) * 100;
+            progressBar.style.setProperty('--nic-percent', '0%');
+            progressBar.style.setProperty('--pg-percent', `${pgPercent}%`);
+            // 额外VG提示
+            let detailVGInfo = document.getElementById('detailExtraVGInfo');
+            if (!detailVGInfo) {
+                detailVGInfo = document.createElement('div');
+                detailVGInfo.id = 'detailExtraVGInfo';
+                detailVGInfo.style = 'display:none;margin:12px 0;padding:10px;background-color:#e3f2fd;border-radius:6px;';
+                detailTableBody.parentNode.parentNode.insertBefore(detailVGInfo, detailTableBody.parentNode);
+            }
+            if (extraVGVolume > 0) {
+                detailVGInfo.style.display = 'block';
+                detailVGInfo.innerHTML = `<p style='margin:0;color:#1565c0;'>需要额外添加 <b>${extraVGVolume.toFixed(2)}</b>ml VG 以维持预设比例</p>`;
+            } else {
+                detailVGInfo.style.display = 'none';
+            }
+            // 显示详情，隐藏其它
+            document.getElementById('recipeDetailContainer').style.display = 'block';
+            document.getElementById('recipeForm').style.display = 'none';
+            document.querySelector('.saved-recipes').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToRecipeList() {
+            document.getElementById('recipeDetailContainer').style.display = 'none';
+            document.querySelector('.saved-recipes').style.display = 'block';
+            updateRecipeList();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 导出JSON
+        function exportRecipesToJSON() {
+            const recipes = localStorage.getItem('recipes') || '[]';
+            let filename = prompt('请输入导出文件名（无需加扩展名）：', 'recipes');
+            if (!filename) filename = 'recipes';
+            if (!filename.endsWith('.json')) filename += '.json';
+            const blob = new Blob([recipes], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        // 导出XML
+        function exportRecipesToXML() {
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            let xml = '<?xml version="1.0" encoding="UTF-8"?><recipes>';
+            recipes.forEach(recipe => {
+                xml += `<recipe>`;
+                xml += `<name>${escapeXML(recipe.name)}</name>`;
+                xml += `<date>${recipe.date}</date>`
+            });
+            xml += '</recipes>';
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'recipes.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleFixedRatio() {
+            const fixedRatioInput = document.querySelector('.fixed-ratio-input');
+            const isChecked = document.getElementById('fixedRatio').checked;
+            fixedRatioInput.style.display = isChecked ? 'flex' : 'none';
+            if (isChecked) {
+                // 只显示输入框，不做校验
+            } else {
+                document.getElementById('extraVGInfo').style.display = 'none';
+                // 恢复原始PG/VG比例
+                document.getElementById('pgPercentage').value = userBasePG;
+                document.getElementById('vgPercentage').value = userBaseVG;
+                document.getElementById('totalVolume').value = parseFloat(document.getElementById('totalVolume').getAttribute('data-base')) || 100;
+                checkFlavorAndUpdatePGVG();
+            }
+        }
+
+        function handleFixedRatioChange() {
+            const ratioInput = document.getElementById('fixedRatioInput').value;
+            const ratioMatch = ratioInput.match(/^(\d+):(\d+)$/);
+            if (!ratioMatch) {
+                alert('请输入正确的比例格式，例如：1:1、3:7、4:6');
+                return;
+            }
+            const pgRatio = parseInt(ratioMatch[1]);
+            const vgRatio = parseInt(ratioMatch[2]);
+            const totalRatio = pgRatio + vgRatio;
+            // 计算百分比
+            const pgPercent = (pgRatio / totalRatio) * 100;
+            const vgPercent = (vgRatio / totalRatio) * 100;
+            // 更新PG/VG比例
+            document.getElementById('pgPercentage').value = pgPercent.toFixed(1);
+            document.getElementById('vgPercentage').value = vgPercent.toFixed(1);
+            // 更新用户基础比例
+            userBasePG = pgPercent;
+            userBaseVG = vgPercent;
+            // 检查香精并更新比例
+            checkFlavorAndUpdatePGVG();
+        }
+    </script>
+</body>
+</html>
